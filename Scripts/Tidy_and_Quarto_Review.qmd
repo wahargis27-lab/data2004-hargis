@@ -1,8 +1,10 @@
 ---
 title: "DATA2004 Refresher"
 subtitle: "Tidyverse + Quarto Review"
-author: "[Your Name]"
-format: html
+author: "Will Hargis"
+format: 
+  html: 
+    embed-resources: true
 editor: visual
 ---
 
@@ -36,6 +38,15 @@ You'll need to run `install.packages(palmerpenguins)` **once** in your console i
 ```{r}
 library(tidyverse)
 library(palmerpenguins)
+
+```
+
+```{r}
+#PPL don't like to see code - Dr Hales
+#| echo: false
+#| warning: false
+
+2 +5
 
 ```
 
