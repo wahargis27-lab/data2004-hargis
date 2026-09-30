@@ -1,0 +1,301 @@
+---
+title: "Weekly 2: Coffee Ratings"
+author: "[Name]"
+format:
+  html:
+    embed-resources: true
+editor: visual
+---
+
+## Overview
+
+You want to know which producers grow the best-rated coffee.
+
+That sounds like a `group_by()` and a `summarise()`. The problem is that `producer` was typed by different people in different ways, so the same producer can appear under several labels, and some labels are not producers at all.
+
+Your job is to work out how much of that you can fix, how much you shouldn't, and what that does to the answer.
+
+A few things:
+
+1.  Add `#| echo: false` to your code blocks.
+2.  Use a new block when you move to a new task.
+3.  Code goes in the blocks. **Answers go outside them**, as prose. A comment inside a code chunk is not an answer.
+4.  Keep the original `producer` column. Every cleaned version goes in a **new** column.
+
+Due Monday at 8pm.
+
+## Your data
+
+Import `coffee_ratings.csv` and inspect it.
+
+```{r}
+#| warning: false
+library(tidyverse)
+
+ratings <- read_csv("../Data/Raw/coffee_ratings.csv")
+
+glimpse(ratings)
+```
+
+## Before you start
+
+> What does one row represent?
+>
+> A coffee sample
+
+> Is there a column that uniquely identifies a row? How would you check?
+>
+> Nope, you look to see if there is a col with only unique values
+
+> Is `producer` a key? What does it mean that the same producer can appear on many rows?
+>
+> Producer is not a key because several rows can share one, if it appears multiple times that means its multiple samples from the same producer
+
+## How many producers?
+
+Count the distinct values of `producer`.
+
+```{r}
+#| warning: false
+ratings %>%
+  summarise(
+    num_of_producers = n_distinct(producer)
+  )
+```
+
+> How many distinct values are there?
+>
+> 692
+
+> How many rows have no producer recorded? Does your distinct count include "missing" as one of its values? How would you check?
+>
+> ```         
+> Yes
+> ```
+>
+> This is included in distinct
+>
+> ```{r}
+> #| warning: false
+> ratings %>%
+>   summarise(
+>     num_of_producers = sum(is.na(producer))
+>   )
+> ```
+
+> Why shouldn't you read that number as the number of distinct producers?
+>
+> Because there are a lot of secret null values
+
+## Normalize the representation
+
+Create a new column, `producer_clean`, that makes the producer labels consistent in case and whitespace. Keep `producer`.
+
+```{r}
+#| warning: false
+ratings <- ratings %>%
+  mutate(
+    producer_clean = toupper(str_squish(producer))
+  )
+
+```
+
+> How many distinct values does `producer_clean` have?
+>
+> 666 - The Anti Christ
+>
+> ```{r}
+> #| warning: false
+> ratings %>%
+>   summarise(
+>     num_of_producers = n_distinct(producer_clean)
+>   )
+> ```
+
+> Is that the number of producers now? What does the reduction establish, and what does it *not* establish?
+>
+> No, It cuts a few duplicates, but it still has thigns like null
+
+## Which labels actually merged?
+
+A single number doesn't tell you what happened. Build a table showing every `producer_clean` value that more than one raw `producer` value was combined into, along with the raw values that went into it.
+
+```{r}
+#| warning: false
+ratings %>%
+  group_by(producer_clean) %>%
+  summarise(
+    num_of_raw_values = n_distinct(producer, na.rm = TRUE)
+  ) %>%
+  filter(num_of_raw_values > 1)
+```
+
+> How many cleaned labels absorbed more than one raw label?
+>
+> 22
+
+> Look through them. Is every merge one you would stand behind?
+>
+> Yea it look like it
+
+> Is this table more useful than knowing the number of labels went down? Why?
+>
+> It is because it shows how it's working giving us a deeper understanding of what we're manipulating
+
+## Does it change anything?
+
+Compare the La Plata coffees before and after normalizing. For each version, report the number of coffees and the mean and median `total_cup_points`.
+
+```{r}
+#| warning: false
+ratings %>%
+  filter(producer == "La Plata") %>%
+  summarise(
+    mean_total = mean(total_cup_points),
+    median_total = median(total_cup_points),
+    total = sum(total_cup_points)
+  )
+
+ratings %>%
+  filter(producer_clean == "LA PLATA") %>%
+  summarise(
+    mean_total = mean(total_cup_points),
+    median_total = median(total_cup_points),
+    total = sum(total_cup_points)
+  )
+```
+
+> What changed more: the number of coffees or the average score?
+>
+> Number of coffees, it changed dramatically more than the averages
+
+> Suppose you had reported how many coffees La Plata produced using the raw column. How far off would you have been?
+>
+> By about 700
+
+## What case and whitespace didn't catch
+
+Some labels still differ only in punctuation, i.e., a period, a comma, a slash.
+
+Sort the distinct values of `producer_clean` and read through them. Near-duplicates end up next to each other.
+
+```{r}
+#| warning: false
+ratings <- ratings %>%
+  mutate(
+    producer_clean = str_remove_all(producer_clean,
+                                    "[[:punct:]]") 
+  )
+```
+
+> Find at least **three** pairs of labels that differ only in punctuation.
+>
+> ```         
+> AGRICOLA EL PILAR, S.A. | AGRICOLA EL PILAR, SA.
+> AGRICOLA NUEVA GRANADA, S.A | AGRICOLA NUEVA GRANADA, S.A.   
+> ConquistaMorito | Conquista/Morito 
+> ```
+>
+> ```{r}
+> #| warning: false
+> ratings %>%
+>   filter(!is.na(producer)) %>%
+>   mutate(producer_clean = str_remove_all(producer, "[[:punct:]]")) %>%
+>   group_by(producer_clean) %>%
+>   summarise(
+>     producers = paste(unique(producer), collapse = " | ")
+>   ) %>%
+>   filter(str_detect(producers, fixed(" | ")))
+> ```
+
+Now use exact replacement to make each pair consistent. Change only the values you identified and nothing else.
+
+```{r}
+#| warning: false
+
+ratings %>%
+  mutate(
+    producer = str_replace_all(
+      producer,
+      c(
+        "AGRICOLA EL PILAR, S.A." = "AGRICOLA EL PILAR, SA.",
+        "AGRICOLA NUEVA GRANADA, S.A" = "AGRICOLA NUEVA GRANADA, S.A.",
+        "ConquistaMorito" = "Conquista/Morito"
+      )
+    )
+  )
+```
+
+> For each change, say why you're confident it's the same producer.
+>
+> 1: "AGRICOLA EL PILAR, S.A." = "AGRICOLA EL PILAR, SA."\
+> This is literally the same spelling but the acronym is missing a period
+>
+> 2: "AGRICOLA NUEVA GRANADA, S.A" = "AGRICOLA NUEVA GRANADA, S.A."
+>
+> Same situation, an acronym is missing a period
+>
+> 3: "ConquistaMorito" = "Conquista/Morito"
+>
+> I think these are the same but only separated but a slash
+
+> How long did it take to find those by reading? How many labels did you have to look at?
+>
+> I just used r lol
+
+## The top producers
+
+Using `producer_clean`, find the ten producers with the most coffees in the data.
+
+```{r}
+#| warning: false
+ratings%>%
+  group_by(producer_clean) |>
+  summarise(
+    top_producers = n()
+  ) |>
+  slice_max(order_by = top_producers, n = 10)
+```
+
+Look at that list carefully.
+
+> Is every entry in it a producer? If not, which ones aren't, and what do they mean?
+>
+> no, some are NA or "Several"
+
+> Is any single producer split across more than one row of the list?
+>
+> Yes
+
+Now look at these four raw labels:
+
+- Ipanema Agricola
+- Ipanema Agricola S.A
+- Ipanema Agrícola SA
+- Ipanema Coffees
+
+> Should these be combined into one producer? **Don't recode them.** Explain whether combining them would be normalization or classification, and what evidence you'd need before doing it.
+>
+> They should be combined, it is clear they are all variations of the same name
+
+> If you did combine them, what would happen to your top-ten list?
+>
+> Ipanema would odviously blow up and have a high ranking
+
+## What this means for your question
+
+> A classmate says: "I reduced the producer column from 692 labels to 666, so the cleaned column is better." Is that justified? Explain.
+>
+> Yea because then it has less noise from spelling variations
+
+> You set out to find which producers grow the best-rated coffee. Given everything above, what would you need to tell someone before they trusted your answer?
+>
+> I'd tell them that the data has been cleaned first
+
+## Disclosure appendix
+
+> What did you try first? Include the code you wrote and the actual error message, or a clear description of the problem if there was no error.
+
+> If you used an AI system: the exact prompt, exactly what it returned, what it got wrong or left unclear, and what you changed.
+
+> If you didn't use one, say so.
