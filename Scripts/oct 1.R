@@ -11,11 +11,16 @@ requests <- read_csv(
 glimpse(requests) 
 
 # what does one row represent? how do you know?
+#a police report, i did a vibe check
+
 # what identifies one request? how do you know?
+#unqiue key, also vibe check
 
 # take a look at our columns. what are the data types? 
+#strings
 
 # pay attention to the *_date columns. what types are those? 
+#strings
 
 # the columns are dates and times, but is that their actual data type being recognized? 
 
@@ -34,7 +39,6 @@ month(requests$created_date[1])
 year(requests$created_date[1])
 
 # what is the value? where is that number even coming from??
-as.Date(requests$created_date[1])
 
 # let's take a look at day day(), month(), and year() do under the hood. 
 as.Date(requests$created_date[1])
@@ -50,29 +54,6 @@ ymd(requests$created_date[1])
 requests |> 
   select(created_date) |> 
   slice_head(n = 10)
-
-requests %>%
-  mutate( 
-    new_date = if_else(str_detect(created_date, "^1[3-9]/"), 1, 0) 
-  ) |>
-  filter(new_date == 1)
-
-requests <- requests %>%
-  mutate(created_wrong = mdy_hms(created_date)
-  )
-
-requests |>
-  select( created_date, created_wrong
-  )|>
-  head(10)
-
-requests <- requests %>%
-  mutate(created = mdy_hms(created_date, tz = "America/New_York")
-  )
-
-requests |>
-  select(created, created_wrong)|>
-  head(10)
 
 # look at those 10 lines. before we can choose a parser, what do we need to know? 
 
@@ -144,26 +125,6 @@ requests |>
 ### how many requests it received. 
 ### how many you were able to measure. 
 ### a typical time to close. 
-
-requests %>%
-  filter(!is.na(closed_date)) |>
-  mutate(
-    delay = (mdy_hms(closed_date, tz = "America/New_York") - mdy_hms(created_date, tz = "America/New_York") )/ 3600 
-  ) |>
-  ggplot(
-    aes(x = agency_name, y = delay)
-  ) + 
-  geom_boxplot()
-
-requests %>%
-  filter(!is.na(closed_date)) |>
-  mutate(
-    delay = (mdy_hms(closed_date, tz = "America/New_York") - mdy_hms(created_date, tz = "America/New_York") )/ 3600 
-  ) |>
-  group_by(agency_name) |>
-  summarise(
-    response_time = median(delay)
-  )
 
 ## you should limit your results to only include agencies that had at least 500 requests.  
 ### 
