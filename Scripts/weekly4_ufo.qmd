@@ -407,11 +407,17 @@ ufos %>%
 ```
 
 > Do you believe it? What would you do with this record if you were working out how long a typical sighting lasts?\
-> Yea it happened to me the other day
+> No, it wasn't mentioned in the description
 
 # Bringing it together
 
 A friend hears you've been working with UFO data and asks: *when do people see UFOs, and how long does a sighting usually last?*
+
+People generally see UFOs at night. With the warm months of the year being the most popular time to run into UFOs. The most popular day is the fourth of July, followed by New Years.
+
+Sightings usually last only a few minutes.
+
+The big cavitate is a lot of the data is poorly formated and doesn't give a clear picture as to what actually happened. These also aren't UFO sightings, this data set is measuring reported sightings of UFOs not exactly real UFO events.
 
 Write a short answer, roughly 200 words, that:
 
