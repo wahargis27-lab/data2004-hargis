@@ -41,6 +41,9 @@ libraries %>%
     n = n_distinct(FSCSKEY)
   )
 
+libraries |> 
+  count(FSCSKEY)
+
 # let's focus on VISITS for now. what does this column mean?
 #how many visits were paid to the library
 
@@ -193,7 +196,7 @@ mean(libraries$TOTATTEN, na.rm = TRUE)
 # It depends on the distribution, because something might be reported as too high
 
 # are the coded rows spread out, or do they bunch up?
-ggplot(libraries, aes(x = total_attendace_clean)) +
+ggplot(libraries, aes(x = total_attendace_clean, colour = "steelblue")) +
   geom_boxplot(fill = "steelblue") 
 
 #There's a lot of outliers
